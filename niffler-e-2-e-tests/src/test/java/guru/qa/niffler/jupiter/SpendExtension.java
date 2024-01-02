@@ -33,12 +33,28 @@ public class SpendExtension implements BeforeEachCallback {
         GenerateSpend.class
     );
 
+    Optional<GenerateCategory> category = AnnotationSupport.findAnnotation(
+            extensionContext.getRequiredTestMethod(),
+            GenerateCategory.class
+    );
+
+    String categoryString;
     if (spend.isPresent()) {
       GenerateSpend spendData = spend.get();
+      if ((spendData.category() == null || spendData.category().isEmpty())) {
+        if (category.isPresent() && category.get().username().equals(spendData.username())) {
+          categoryString = category.get().category();
+        }    else  {
+          categoryString = "";
+        }
+      } else {
+        categoryString = spendData.category();
+      }
+
       SpendJson spendJson = new SpendJson(
           null,
           new Date(),
-          spendData.category(),
+          categoryString,
           spendData.currency(),
           spendData.amount(),
           spendData.description(),

@@ -3,6 +3,7 @@ package guru.qa.niffler.test;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import guru.qa.niffler.jupiter.DisabledByIssue;
+import guru.qa.niffler.jupiter.GenerateCategory;
 import guru.qa.niffler.jupiter.GenerateSpend;
 import guru.qa.niffler.model.CurrencyValues;
 import guru.qa.niffler.model.SpendJson;
@@ -26,6 +27,10 @@ public class SpendingTest extends BaseWebTest {
     mainPage = loginPage.login("duck", "12345");
   }
 
+  @GenerateCategory(
+          username = "duck",
+          category = "Обучение"
+  )
   @GenerateSpend(
           username = "duck",
           description = "QA.GURU Advanced 4",
