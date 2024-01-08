@@ -1,6 +1,5 @@
 package guru.qa.niffler.pages;
 
-import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import org.openqa.selenium.support.*;
 
@@ -22,8 +21,7 @@ public class MainPage {
         table
                 .$$("tr")
                 .find(text(description))
-                .$$("td")
-                .first()
+                .$("td")
                 .scrollIntoView(true)
                 .click();
     }

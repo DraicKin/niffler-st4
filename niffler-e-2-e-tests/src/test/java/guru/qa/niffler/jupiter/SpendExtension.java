@@ -41,11 +41,11 @@ public class SpendExtension implements BeforeEachCallback {
     String categoryString;
     if (spend.isPresent()) {
       GenerateSpend spendData = spend.get();
-      if ((spendData.category() == null || spendData.category().isEmpty())) {
+      if (spendData.category().isEmpty()) {
         if (category.isPresent() && category.get().username().equals(spendData.username())) {
           categoryString = category.get().category();
         }    else  {
-          categoryString = "";
+          throw new RuntimeException("Category not found");
         }
       } else {
         categoryString = spendData.category();
