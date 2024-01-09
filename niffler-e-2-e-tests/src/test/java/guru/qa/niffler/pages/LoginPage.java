@@ -1,23 +1,15 @@
 package guru.qa.niffler.pages;
 
 import com.codeborne.selenide.SelenideElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.How;
 
-import static com.codeborne.selenide.Selenide.page;
+import static com.codeborne.selenide.Selenide.$;
 
 public class LoginPage {
-    @FindBy(how = How.CSS,using = "a[href*='redirect']")
-    private SelenideElement redirect;
 
-    @FindBy(how = How.CSS,using = "input[name='username']")
-    private SelenideElement username;
-
-    @FindBy(how = How.CSS,using = "input[name='password']")
-    private SelenideElement password;
-
-    @FindBy(how = How.CSS,using = "button[type='submit']")
-    private SelenideElement submitButton;
+    private final SelenideElement redirect = $("a[href*='redirect']");
+    private final SelenideElement username = $("input[name='username']");
+    private final SelenideElement password = $("input[name='password']");
+    private final SelenideElement submitButton = $("button[type='submit']");
 
     public void clickRedirectButton() {
         redirect.click();
@@ -39,9 +31,7 @@ public class LoginPage {
         setUsername(username);
         setPassword(password);
         clickSubmitButton();
-        MainPage mainPage = page(MainPage.class);
-        mainPage.waitForLoad();
-        return mainPage;
+        return new MainPage();
     }
 
 }

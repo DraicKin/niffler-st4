@@ -1,22 +1,17 @@
 package guru.qa.niffler.pages;
 
 import com.codeborne.selenide.SelenideElement;
-import org.openqa.selenium.support.*;
-
+import org.openqa.selenium.By;
 import static com.codeborne.selenide.CollectionCondition.size;
 import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Selenide.$;
 
 public class MainPage {
-    @FindBy(how=How.CSS, using = ".spendings-table tbody")
-    private SelenideElement table;
 
-    @FindBy(how=How.XPATH, using = "//button[contains(text(),'Delete selected')]")
-    private SelenideElement deleteSelectedButton;
+    private final SelenideElement table = $(".spendings-table tbody");
+    private final SelenideElement deleteSelectedButton
+            = $(By.xpath("//button[contains(text(),'Delete selected')]"));
 
-    public void waitForLoad() {
-        table.shouldBe(visible);
-    }
     public void selectSpendingByDescription(String description) {
         table
                 .$$("tr")
