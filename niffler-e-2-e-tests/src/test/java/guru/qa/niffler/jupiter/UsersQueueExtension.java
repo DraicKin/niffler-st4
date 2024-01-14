@@ -3,6 +3,7 @@ package guru.qa.niffler.jupiter;
 import guru.qa.niffler.model.CurrencyValues;
 import guru.qa.niffler.model.TestData;
 import guru.qa.niffler.model.UserJson;
+import io.qameta.allure.Allure;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -48,28 +49,26 @@ public class UsersQueueExtension implements BeforeEachCallback, AfterTestExecuti
 
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
+    HashMap<User.UserType, UserJson> testCandidates = new HashMap<>();
     Parameter[] parameters = context.getRequiredTestMethod().getParameters();
+    storeTestCandidate(parameters, testCandidates);
 
-    boolean isStored = storeTestCandidate(context, parameters);
-
-    if(!isStored) {
-      List<Method> beforeEachMethods = Arrays.stream(context.getRequiredTestClass().getDeclaredMethods())
-              .filter(m -> m.isAnnotationPresent(BeforeEach.class))
-              .collect(Collectors.toList());
-      beforeEachMethods.forEach( m ->
-              {
-                storeTestCandidate(context, m.getParameters());
-              }
-      );
-    }
+    List<Method> beforeEachMethods = Arrays.stream(context.getRequiredTestClass().getDeclaredMethods())
+            .filter(m -> m.isAnnotationPresent(BeforeEach.class))
+            .collect(Collectors.toList());
+    beforeEachMethods.forEach( m ->
+            {
+              storeTestCandidate(m.getParameters(), testCandidates);
+            });
+    context.getStore(NAMESPACE).put(context.getUniqueId(), testCandidates);
   }
 
   @Override
   public void afterTestExecution(ExtensionContext context) throws Exception {
-    ArrayList<UserJson> testUsers = context.getStore(NAMESPACE)
-            .get(context.getUniqueId(), ArrayList.class);
-    for (UserJson testUser : testUsers) {
-      users.get(testUser.testData().userType()).add(testUser);
+    HashMap<User.UserType, UserJson> testUsers = context.getStore(NAMESPACE)
+            .get(context.getUniqueId(), HashMap.class);
+    for (var testUser : testUsers.entrySet()) {
+      users.get(testUser.getKey()).add(testUser.getValue());
     }
   }
 
@@ -83,11 +82,11 @@ public class UsersQueueExtension implements BeforeEachCallback, AfterTestExecuti
 
   @Override
   public UserJson resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    ArrayList<UserJson> testUsers = extensionContext.getStore(NAMESPACE)
-            .get(extensionContext.getUniqueId(), ArrayList.class);
-    for (UserJson testUser : testUsers) {
-      if (parameterContext.getParameter().getAnnotation(User.class).value() == testUser.testData().userType()) {
-        return testUser;
+    HashMap<User.UserType, UserJson> testUsers = extensionContext.getStore(NAMESPACE)
+            .get(extensionContext.getUniqueId(), HashMap.class);
+    for (var testUser : testUsers.entrySet()) {
+      if (parameterContext.getParameter().getAnnotation(User.class).value() == testUser.getKey()) {
+        return testUser.getValue();
       }
     }
 
@@ -110,8 +109,8 @@ public class UsersQueueExtension implements BeforeEachCallback, AfterTestExecuti
     );
   }
 
-  private static boolean storeTestCandidate(ExtensionContext context, Parameter[] parameters) {
-    ArrayList<UserJson> testCandidates = new ArrayList<>();
+  private static void storeTestCandidate(Parameter[] parameters, HashMap<User.UserType, UserJson> testCandidates) {
+
     for (Parameter parameter : parameters) {
       User annotation = parameter.getAnnotation(User.class);
       if (annotation != null && parameter.getType().isAssignableFrom(UserJson.class)) {
@@ -120,15 +119,10 @@ public class UsersQueueExtension implements BeforeEachCallback, AfterTestExecuti
         while (testCandidate == null) {
           testCandidate = queue.poll();
         }
-        testCandidates.add(testCandidate);
+        Allure.step("Добавляем пользователя: " + testCandidate.username() + " типа "
+                + testCandidate.testData().userType());
+        testCandidates.put(annotation.value(), testCandidate);
       }
     }
-    if (testCandidates.size() > 0) {
-      context.getStore(NAMESPACE).put(context.getUniqueId(), testCandidates);
-      return true;
-    } else {
-      return false;
-    }
-
   }
 }

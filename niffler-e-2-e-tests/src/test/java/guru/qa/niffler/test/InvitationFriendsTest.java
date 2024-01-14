@@ -20,7 +20,7 @@ public class InvitationFriendsTest {
     }
 
     private LoginPage loginPage;
-    private MenuBar menuBar;
+    private final MenuBar menuBar = new MenuBar();
 
     @BeforeEach
     void doLogin() {
@@ -31,7 +31,6 @@ public class InvitationFriendsTest {
     @DisplayName("Есть отправленный запрос")
     void pendingInvitationShouldExist(@User(INVITATION_SENT) UserJson user) {
         loginPage.login(user.username(), user.testData().password());
-        menuBar = new MenuBar();
         PeoplePage peoplePage = menuBar.clickAllPeopleButton();
         peoplePage.pendingInvitationExists();
     }
@@ -40,7 +39,6 @@ public class InvitationFriendsTest {
     @DisplayName("Есть входящий запрос")
     void incomingInvitationShouldExist(@User(INVITATION_RECIEVED) UserJson user) {
         loginPage.login(user.username(), user.testData().password());
-        menuBar = new MenuBar();
         FriendsPage friendsPage = menuBar.clickFriendsButton();
         friendsPage.friendInvitationExists();
     }
@@ -49,7 +47,6 @@ public class InvitationFriendsTest {
     @DisplayName("В списке друзей есть друг")
     void friendShouldExist(@User(WITH_FRIENDS) UserJson user) {
         loginPage.login(user.username(), user.testData().password());
-        menuBar = new MenuBar();
         FriendsPage friendsPage = menuBar.clickFriendsButton();
         friendsPage.friendExists();
     }
@@ -58,9 +55,8 @@ public class InvitationFriendsTest {
     @DisplayName("В списке всех пользователей есть существующий пользователь")
     void friendShouldExist(@User(WITH_FRIENDS) UserJson user1, @User(COMMON) UserJson user2) {
         loginPage.login(user1.username(), user1.testData().password());
-        menuBar = new MenuBar();
         PeoplePage peoplePage = menuBar.clickAllPeopleButton();
-        peoplePage.personExistsInAllPeaople(user2.username());
+        peoplePage.personExistsInAllPeople(user2.username());
     }
 
 

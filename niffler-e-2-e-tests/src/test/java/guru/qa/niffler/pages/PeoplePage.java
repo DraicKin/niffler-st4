@@ -22,7 +22,7 @@ public class PeoplePage {
     }
 
 
-    public void personExistsInAllPeaople(String userName) {
+    public void personExistsInAllPeople(String userName) {
         peopleTable
                 .$$("tr")
                 .find(text(userName))
