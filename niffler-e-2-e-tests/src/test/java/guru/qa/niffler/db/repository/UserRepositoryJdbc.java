@@ -2,17 +2,14 @@ package guru.qa.niffler.db.repository;
 
 import guru.qa.niffler.db.DataSourceProvider;
 import guru.qa.niffler.db.JdbcUrl;
-import guru.qa.niffler.db.model.Authority;
-import guru.qa.niffler.db.model.UserAuthEntity;
-import guru.qa.niffler.db.model.UserEntity;
+import guru.qa.niffler.db.model.*;
+import io.qameta.allure.Allure;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class UserRepositoryJdbc implements UserRepository {
@@ -108,10 +105,167 @@ public class UserRepositoryJdbc implements UserRepository {
   @Override
   public void deleteInAuthById(UUID id) {
 
+    try (Connection connection = authDs.getConnection()) {
+      connection.setAutoCommit(false);
+      try(
+              PreparedStatement ps = connection.prepareStatement(
+              "DELETE FROM \"authority\" " +
+                      "WHERE user_id = ?");
+              PreparedStatement ps2 = connection.prepareStatement(
+                      "DELETE FROM \"user\" " +
+                              "WHERE id = ?")
+      ) {
+        ps.setObject(1, id, Types.OTHER);
+        ps.executeUpdate();
+        ps2.setObject(1,id, Types.OTHER);
+        ps2.executeUpdate();
+        Allure.step(ps.toString());
+        connection.commit();
+      } catch(Exception e) {
+        connection.rollback();
+        throw e;
+      }
+      connection.setAutoCommit(true);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public void deleteInUserdataById(UUID id) {
+    try (Connection connection = udDs.getConnection()) {
+      try(PreparedStatement ps = connection.prepareStatement(
+              "DELETE FROM \"user\" " +
+                      "WHERE id = ?"
+      )) {
+        ps.setObject(1, id, Types.OTHER);
+        ps.executeUpdate();
+        Allure.step(ps.toString());
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
+  @Override
+  public void updateInAuth(UserAuthEntity user) {
+    try (Connection connection = authDs.getConnection()) {
+      try( PreparedStatement ps = connection.prepareStatement(
+                      "UPDATE \"user\" " +
+                              "SET username = ?, password = ?, enabled = ?, account_non_expired = ?, " +
+                              "account_non_locked = ?, credentials_non_expired = ? " +
+                              "WHERE id = ?")
+      ) {
+        ps.setString(1, user.getUsername());
+        ps.setString(2, user.getPassword());
+        ps.setBoolean(3, user.getEnabled());
+        ps.setBoolean(4, user.getAccountNonExpired());
+        ps.setBoolean(5, user.getAccountNonLocked());
+        ps.setBoolean(6, user.getCredentialsNonExpired());
+        ps.setObject(7, user.getId(), Types.OTHER);
+        ps.executeUpdate();
+        Allure.step(ps.toString());
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void updateInUserdata(UserEntity user) {
+    try (Connection connection = udDs.getConnection()) {
+      try( PreparedStatement ps = connection.prepareStatement(
+              "UPDATE \"user\" " +
+                      "SET username = ?, currency = ?, firstname = ?, surname = ?, photo = ? " +
+                      "WHERE id = ?")
+      ) {
+        ps.setString(1, user.getUsername());
+        ps.setString(2, user.getCurrency().name());
+        ps.setString(3, user.getFirstname());
+        ps.setString(4, user.getSurname());
+        ps.setBytes(5, user.getPhoto());
+        ps.setObject(6, user.getId(), Types.OTHER);
+        ps.executeUpdate();
+        Allure.step(ps.toString());
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public UserAuthEntity readInAuthById(UUID id) {
+    UserAuthEntity user = new UserAuthEntity();
+    try (Connection connection = authDs.getConnection()) {
+      try( PreparedStatement ps = connection.prepareStatement(
+              "SELECT * FROM \"user\" " +
+                      "WHERE id = ?");
+           PreparedStatement psAuth = connection.prepareStatement(
+                   "SELECT * FROM \"authority\" " +
+                   "WHERE user_id = ?")
+      ) {
+        ps.setObject(1, id, Types.OTHER);
+        ps.execute();
+        try (ResultSet sqlResult = ps.getResultSet()) {
+          if (sqlResult.next()) {
+            user.setId(sqlResult.getObject("id", UUID.class));
+            user.setUsername(sqlResult.getString("username"));
+            user.setPassword(sqlResult.getString("password"));
+            user.setEnabled(sqlResult.getBoolean("enabled"));
+            user.setAccountNonLocked(sqlResult.getBoolean("account_non_locked"));
+            user.setAccountNonExpired(sqlResult.getBoolean("account_non_expired"));
+            user.setCredentialsNonExpired(sqlResult.getBoolean("credentials_non_expired"));
+          } else {
+            throw new IllegalStateException("Can`t find user");
+          }
+        }
+
+        psAuth.setObject(1, id, Types.OTHER);
+        psAuth.execute();
+
+        try (ResultSet sqlResult = psAuth.getResultSet()) {
+          ArrayList<AuthorityEntity> authorities = new ArrayList<>();
+          while (sqlResult.next()) {
+            AuthorityEntity ae = new AuthorityEntity();
+            ae.setId(sqlResult.getObject("id", UUID.class));
+            ae.setAuthority(Authority.valueOf(sqlResult.getString("authority")));
+            authorities.add(ae);
+          }
+          user.setAuthorities(authorities);
+        }
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+    return user;
+  }
+
+  @Override
+  public UserEntity readInUserdataById(UUID id) {
+    UserEntity user = new UserEntity();
+    try (Connection connection = udDs.getConnection()) {
+      try( PreparedStatement ps = connection.prepareStatement(
+              "SELECT * FROM \"user\" " +
+                      "WHERE id = ?")
+      ) {
+        ps.setObject(1, id, Types.OTHER);
+        ps.execute();
+        try (ResultSet sqlResult = ps.getResultSet()) {
+          if (sqlResult.next()) {
+            user.setId(sqlResult.getObject("id", UUID.class));
+            user.setUsername(sqlResult.getString("username"));
+            user.setCurrency(CurrencyValues.valueOf(sqlResult.getString("currency")));
+            user.setFirstname(sqlResult.getString("firstname"));
+            user.setSurname(sqlResult.getString("surname"));
+            user.setPhoto(sqlResult.getBytes("photo"));
+          } else {
+            throw new IllegalStateException("Can`t find user");
+          }
+        }
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+    return user;
   }
 }
