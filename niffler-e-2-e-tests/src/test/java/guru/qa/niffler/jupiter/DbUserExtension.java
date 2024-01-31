@@ -4,7 +4,6 @@ import guru.qa.niffler.db.model.*;
 import guru.qa.niffler.db.repository.UserRepository;
 import guru.qa.niffler.db.repository.UserRepositoryJdbc;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -31,21 +30,22 @@ public class DbUserExtension implements BeforeTestExecutionCallback, AfterTestEx
             if (pass.isEmpty()) {
                 pass = RandomStringUtils.randomAlphanumeric(12);
             }
-            Pair<UserAuthEntity, UserEntity> userData = createUser(username, pass);
-            extensionContext.getStore(NAMESPACE).put("userAuth", userData.getLeft());
-            extensionContext.getStore(NAMESPACE).put("user", userData.getRight());
+            UserCredentials userData = createUser(username, pass);
+            extensionContext.getStore(NAMESPACE).put(extensionContext.getUniqueId(), userData);
         }
 
     }
 
     @Override
     public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-        UserAuthEntity userAuth = extensionContext.getStore(NAMESPACE).get("userAuth", UserAuthEntity.class);
-        UserEntity user = extensionContext.getStore(NAMESPACE).get("user", UserEntity.class);
-        userRepository.deleteInAuthById(userAuth.getId());
-        userRepository.deleteInUserdataById(user.getId());
+        UserCredentials userCredentials = extensionContext
+                .getStore(NAMESPACE)
+                .get(extensionContext.getUniqueId(), UserCredentials.class);
+        userRepository.deleteInAuthById(userCredentials.getUserAuthEntity().getId());
+        userRepository.deleteInUserdataById(userCredentials.getUserEntity().getId());
     }
-    private Pair<UserAuthEntity, UserEntity> createUser(String username, String password) {
+    private UserCredentials createUser(String username, String password) {
+        UserCredentials userCredentials = new UserCredentials();
         UserAuthEntity userAuth = new UserAuthEntity();
         userAuth.setUsername(username);
         userAuth.setPassword(password);
@@ -66,7 +66,9 @@ public class DbUserExtension implements BeforeTestExecutionCallback, AfterTestEx
         user.setCurrency(CurrencyValues.RUB);
         userRepository.createInAuth(userAuth);
         userRepository.createInUserdata(user);
-        return Pair.of(userAuth, user);
+        userCredentials.setUserEntity(user);
+        userCredentials.setUserAuthEntity(userAuth);
+        return userCredentials;
     }
 
 }

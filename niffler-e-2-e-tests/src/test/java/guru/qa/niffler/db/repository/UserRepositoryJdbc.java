@@ -3,7 +3,6 @@ package guru.qa.niffler.db.repository;
 import guru.qa.niffler.db.DataSourceProvider;
 import guru.qa.niffler.db.JdbcUrl;
 import guru.qa.niffler.db.model.*;
-import io.qameta.allure.Allure;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -119,13 +118,13 @@ public class UserRepositoryJdbc implements UserRepository {
         ps.executeUpdate();
         ps2.setObject(1,id, Types.OTHER);
         ps2.executeUpdate();
-        Allure.step(ps.toString());
         connection.commit();
       } catch(Exception e) {
         connection.rollback();
         throw e;
+      } finally {
+        connection.setAutoCommit(true);
       }
-      connection.setAutoCommit(true);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -140,7 +139,6 @@ public class UserRepositoryJdbc implements UserRepository {
       )) {
         ps.setObject(1, id, Types.OTHER);
         ps.executeUpdate();
-        Allure.step(ps.toString());
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -164,7 +162,6 @@ public class UserRepositoryJdbc implements UserRepository {
         ps.setBoolean(6, user.getCredentialsNonExpired());
         ps.setObject(7, user.getId(), Types.OTHER);
         ps.executeUpdate();
-        Allure.step(ps.toString());
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -186,7 +183,6 @@ public class UserRepositoryJdbc implements UserRepository {
         ps.setBytes(5, user.getPhoto());
         ps.setObject(6, user.getId(), Types.OTHER);
         ps.executeUpdate();
-        Allure.step(ps.toString());
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
