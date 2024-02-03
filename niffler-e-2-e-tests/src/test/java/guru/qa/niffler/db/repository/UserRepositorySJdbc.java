@@ -153,4 +153,45 @@ public class UserRepositorySJdbc implements UserRepository {
       return null;
     });
   }
+
+  @Override
+  public UserAuthEntity updateInAuth(UserAuthEntity user) {
+    authTxt.execute(status -> {
+      authTemplate.update("UPDATE \"user\" " +
+                      "SET username = ?, password = ?, enabled = ?, account_non_expired = ?, " +
+                      "account_non_locked = ?, credentials_non_expired = ? " +
+                      "WHERE id = ?", user.getUsername(), user.getPassword(),  user.getEnabled(),
+              user.getAccountNonExpired(), user.getAccountNonLocked(), user.getCredentialsNonExpired(),
+              user.getId());
+
+      authTemplate.update("DELETE FROM \"authority\" WHERE user_id = ?", user.getId());
+
+      authTemplate.batchUpdate("INSERT INTO \"authority\" " +
+              "(user_id, authority) " +
+              "VALUES (?, ?)", new BatchPreparedStatementSetter() {
+        @Override
+        public void setValues(PreparedStatement ps, int i) throws SQLException {
+          ps.setObject(1, user.getId());
+          ps.setString(2, user.getAuthorities().get(i).getAuthority().name());
+        }
+
+        @Override
+        public int getBatchSize() {
+          return user.getAuthorities().size();
+        }
+      });
+      return user;
+    });
+
+    return user;
+  }
+
+  @Override
+  public UserEntity updateInUserdata(UserEntity user) {
+    udTemplate.update("UPDATE \"user\" " +
+            "SET username = ?, currency = ?, firstname = ?, surname = ?, photo = ? " +
+            "WHERE id = ?",  user.getUsername(), user.getCurrency().name(), user.getFirstname(),
+            user.getSurname(), user.getPhoto(), user.getId());
+    return user;
+  }
 }

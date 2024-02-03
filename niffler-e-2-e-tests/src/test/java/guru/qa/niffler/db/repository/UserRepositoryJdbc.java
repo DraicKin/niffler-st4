@@ -220,4 +220,76 @@ public class UserRepositoryJdbc implements UserRepository {
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  public UserAuthEntity updateInAuth(UserAuthEntity user) {
+    try (Connection connection = authDs.getConnection()) {
+      connection.setAutoCommit(false);
+      try( PreparedStatement ps = connection.prepareStatement(
+              "UPDATE \"user\" " +
+                      "SET username = ?, password = ?, enabled = ?, account_non_expired = ?, " +
+                      "account_non_locked = ?, credentials_non_expired = ? " +
+                      "WHERE id = ?");
+           PreparedStatement delAuth = connection.prepareStatement(
+                   "DELETE FROM \"authority\" WHERE user_id = ?");
+           PreparedStatement insAuth = connection.prepareStatement(
+                   "INSERT INTO \"authority\" " +
+                           "(user_id, authority) " +
+                           "VALUES (?, ?)"
+           )
+      ) {
+        ps.setString(1, user.getUsername());
+        ps.setString(2, user.getPassword());
+        ps.setBoolean(3, user.getEnabled());
+        ps.setBoolean(4, user.getAccountNonExpired());
+        ps.setBoolean(5, user.getAccountNonLocked());
+        ps.setBoolean(6, user.getCredentialsNonExpired());
+        ps.setObject(7, user.getId());
+        ps.executeUpdate();
+
+        delAuth.setObject(1, user.getId());
+        delAuth.executeUpdate();
+
+        for (AuthorityEntity authority : user.getAuthorities()) {
+          insAuth.setObject(1, user.getId());
+          insAuth.setString(2, authority.getAuthority().name());
+          insAuth.addBatch();
+          insAuth.clearParameters();
+        }
+        insAuth.executeBatch();
+        connection.commit();
+
+      } catch (SQLException e) {
+        connection.rollback();
+        throw e;
+      } finally {
+        connection.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+    return user;
+  }
+
+  @Override
+  public UserEntity updateInUserdata(UserEntity user) {
+    try (Connection connection = udDs.getConnection()) {
+      try( PreparedStatement ps = connection.prepareStatement(
+              "UPDATE \"user\" " +
+                      "SET username = ?, currency = ?, firstname = ?, surname = ?, photo = ? " +
+                      "WHERE id = ?")
+      ) {
+        ps.setString(1, user.getUsername());
+        ps.setString(2, user.getCurrency().name());
+        ps.setString(3, user.getFirstname());
+        ps.setString(4, user.getSurname());
+        ps.setBytes(5, user.getPhoto());
+        ps.setObject(6, user.getId());
+        ps.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+    return user;
+  }
 }

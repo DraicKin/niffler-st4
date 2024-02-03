@@ -20,12 +20,8 @@ public interface UserRepository {
 
   void deleteInUserdataById(UUID id);
 
-  void updateInAuth(UserAuthEntity user);
+  UserAuthEntity updateInAuth(UserAuthEntity user);
 
-  void updateInUserdata(UserEntity user);
-
-  UserAuthEntity readInAuthById(UUID id);
-
-  UserEntity readInUserdataById(UUID id);
+  UserEntity updateInUserdata(UserEntity user);
 
 }

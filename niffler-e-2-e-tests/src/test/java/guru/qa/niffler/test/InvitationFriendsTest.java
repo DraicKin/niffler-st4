@@ -2,7 +2,7 @@ package guru.qa.niffler.test;
 
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
-import guru.qa.niffler.jupiter.User;
+import guru.qa.niffler.jupiter.annotation.User;
 import guru.qa.niffler.jupiter.UsersQueueExtension;
 import guru.qa.niffler.model.UserJson;
 import guru.qa.niffler.pages.*;
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static guru.qa.niffler.jupiter.User.UserType.*;
+import static guru.qa.niffler.jupiter.annotation.User.UserType.*;
 
 @ExtendWith(UsersQueueExtension.class)
 public class InvitationFriendsTest {
