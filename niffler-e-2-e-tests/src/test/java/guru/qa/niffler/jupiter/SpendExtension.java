@@ -1,6 +1,7 @@
 package guru.qa.niffler.jupiter;
 
 import guru.qa.niffler.api.SpendApi;
+import guru.qa.niffler.jupiter.annotation.GenerateCategory;
 import guru.qa.niffler.jupiter.annotation.GenerateSpend;
 import guru.qa.niffler.model.SpendJson;
 import okhttp3.OkHttpClient;
@@ -34,12 +35,28 @@ public class SpendExtension implements BeforeEachCallback {
         GenerateSpend.class
     );
 
+    Optional<GenerateCategory> category = AnnotationSupport.findAnnotation(
+            extensionContext.getRequiredTestMethod(),
+            GenerateCategory.class
+    );
+
+    String categoryString;
     if (spend.isPresent()) {
       GenerateSpend spendData = spend.get();
+      if (spendData.category().isEmpty()) {
+        if (category.isPresent() && category.get().username().equals(spendData.username())) {
+          categoryString = category.get().category();
+        }    else  {
+          throw new RuntimeException("Category not found");
+        }
+      } else {
+        categoryString = spendData.category();
+      }
+
       SpendJson spendJson = new SpendJson(
           null,
           new Date(),
-          spendData.category(),
+          categoryString,
           spendData.currency(),
           spendData.amount(),
           spendData.description(),

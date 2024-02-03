@@ -19,4 +19,9 @@ public interface UserRepository {
   void deleteInAuthById(UUID id);
 
   void deleteInUserdataById(UUID id);
+
+  UserAuthEntity updateInAuth(UserAuthEntity user);
+
+  UserEntity updateInUserdata(UserEntity user);
+
 }
