@@ -3,6 +3,7 @@ package guru.qa.niffler.jupiter;
 import guru.qa.niffler.db.model.*;
 import guru.qa.niffler.db.repository.UserRepository;
 import guru.qa.niffler.db.repository.UserRepositoryJdbc;
+import guru.qa.niffler.jupiter.annotation.DbUser;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
